@@ -12,6 +12,8 @@ enum SnapState {
 }
 
 class SnapManager {
+    private var windowObservers: [CGWindowID: AXObserver] = [:]
+    private var isRestoringFromDrag = false
     
     private let hotkeyLeftID:  UInt32 = 1
     private let hotkeyRightID: UInt32 = 2
@@ -45,6 +47,7 @@ class SnapManager {
             )
         }
         registerKeys()
+        startMouseDragDetection()
     }
     
     /// 설정 변경 후 핫키 재등록
@@ -74,6 +77,67 @@ class SnapManager {
         if let ptr = selfPtr { Unmanaged<SnapManager>.fromOpaque(ptr).release(); selfPtr = nil }
     }
     
+    // MARK: - 드래그 감지
+
+    private func startMouseDragDetection() {
+        // 전역 마우스 드래그 감지
+        NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDragged]) { [weak self] event in
+            self?.handleMouseDragged(event: event)
+        }
+        
+        NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseUp]) { [weak self] event in
+            self?.handleMouseUp(event: event)
+        }
+    }
+
+    private var isDragging = false
+    private var dragWindowID: CGWindowID?
+
+    private func handleMouseDragged(event: NSEvent) {
+        guard !isDragging else { return }
+        guard let window = getFrontmostWindow() else { return }
+        let windowID = window.windowID
+        guard let entry = windowStates[windowID], entry.state != .none else { return }
+        
+        isDragging = true
+        dragWindowID = windowID
+        
+        isRestoringFromDrag = true
+        defer { isRestoringFromDrag = false }
+        
+        let currentFrame = getWindowFrame(window: window)
+        let originalFrame = entry.originalFrame
+        let mouseX = NSEvent.mouseLocation.x
+        
+        // 현재 스냅된 창에서 마우스의 X 비율 계산 (0.0 ~ 1.0)
+        let ratioX = (mouseX - currentFrame.origin.x) / currentFrame.width
+        
+        // 원래 크기로 복구 시 같은 비율 위치에 마우스가 오도록 X 계산
+        let targetX = mouseX - originalFrame.width * ratioX
+        
+        // 화면 밖으로 나가지 않게 클램핑
+        var clampedX = targetX
+        if let screen = NSScreen.main {
+            let screenFrame = flipRect(screen.visibleFrame)
+            clampedX = max(screenFrame.minX, min(targetX, screenFrame.maxX - originalFrame.width))
+        }
+        
+        let restoredFrame = CGRect(
+            x: clampedX,
+            y: currentFrame.origin.y,
+            width: originalFrame.width,
+            height: originalFrame.height
+        )
+
+        applyFrame(restoredFrame, to: window.element)
+        windowStates[windowID] = (.none, originalFrame)
+    }
+
+    private func handleMouseUp(event: NSEvent) {
+        isDragging = false
+        dragWindowID = nil
+    }
+
     // MARK: - 이벤트 처리
     
     private func handleHotKeyEvent(_ event: EventRef) -> OSStatus {
@@ -92,6 +156,7 @@ class SnapManager {
     // MARK: - 스냅 로직
     
     private func handleSnap(direction: SnapState) {
+        guard !isRestoringFromDrag else { return }
         guard let window = getFrontmostWindow() else { return }
         let windowID     = window.windowID
         let currentEntry = windowStates[windowID]
