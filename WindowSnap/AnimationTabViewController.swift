@@ -20,7 +20,12 @@ class AnimationTabViewController: NSViewController {
     private func setupUI() {
         let pad: CGFloat = 28
 
-        // 애니메이션 활성화
+        // ── 애니메이션 On/Off ──
+        let sectionLabel = makeLabel("애니메이션", size: 12, bold: true)
+        sectionLabel.textColor = .secondaryLabelColor
+        sectionLabel.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(sectionLabel)
+
         enabledCheckbox = NSButton(checkboxWithTitle: "스냅 애니메이션 활성화", target: self, action: #selector(enabledToggled))
         enabledCheckbox.state = Settings.shared.animationEnabled ? .on : .off
         enabledCheckbox.translatesAutoresizingMaskIntoConstraints = false
@@ -30,7 +35,7 @@ class AnimationTabViewController: NSViewController {
         sep.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(sep)
 
-        // 속도 슬라이더
+        // ── 속도 조절 ──
         let speedTitle = makeLabel("속도 조절", size: 12, bold: true)
         speedTitle.textColor = .secondaryLabelColor
         speedTitle.translatesAutoresizingMaskIntoConstraints = false
@@ -41,7 +46,7 @@ class AnimationTabViewController: NSViewController {
         view.addSubview(durationTitleLabel)
 
         durationSlider = NSSlider(value: Settings.shared.animationDuration,
-                                  minValue: 0.05, maxValue: 0.5,
+                                  minValue: 0.08, maxValue: 0.5,
                                   target: self, action: #selector(durationChanged))
         durationSlider.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(durationSlider)
@@ -51,7 +56,6 @@ class AnimationTabViewController: NSViewController {
         durationLabel.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(durationLabel)
 
-        // 부드러움 슬라이더
         let stepsTitleLabel = makeLabel("부드러움", size: 13)
         stepsTitleLabel.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(stepsTitleLabel)
@@ -59,7 +63,6 @@ class AnimationTabViewController: NSViewController {
         stepsSlider = NSSlider(value: Double(Settings.shared.animationSteps),
                                minValue: 4, maxValue: 30,
                                target: self, action: #selector(stepsChanged))
-        stepsSlider.numberOfTickMarks = 0
         stepsSlider.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(stepsSlider)
 
@@ -72,18 +75,25 @@ class AnimationTabViewController: NSViewController {
         let labelValW: CGFloat = 50
 
         NSLayoutConstraint.activate([
-            enabledCheckbox.topAnchor.constraint(equalTo: view.topAnchor, constant: pad),
+            // 섹션 타이틀
+            sectionLabel.topAnchor.constraint(equalTo: view.topAnchor, constant: 58),
+            sectionLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: pad),
+
+            // 체크박스
+            enabledCheckbox.topAnchor.constraint(equalTo: sectionLabel.bottomAnchor, constant: 10),
             enabledCheckbox.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: pad),
 
+            // 구분선
             sep.topAnchor.constraint(equalTo: enabledCheckbox.bottomAnchor, constant: 18),
             sep.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: pad),
             sep.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -pad),
 
+            // 속도 타이틀
             speedTitle.topAnchor.constraint(equalTo: sep.bottomAnchor, constant: 14),
             speedTitle.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: pad),
 
             // Duration row
-            durationTitleLabel.topAnchor.constraint(equalTo: speedTitle.bottomAnchor, constant: 14),
+            durationTitleLabel.topAnchor.constraint(equalTo: speedTitle.bottomAnchor, constant: 12),
             durationTitleLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: pad),
             durationTitleLabel.widthAnchor.constraint(equalToConstant: labelW),
             durationSlider.centerYAnchor.constraint(equalTo: durationTitleLabel.centerYAnchor),
@@ -94,7 +104,7 @@ class AnimationTabViewController: NSViewController {
             durationLabel.widthAnchor.constraint(equalToConstant: labelValW),
 
             // Steps row
-            stepsTitleLabel.topAnchor.constraint(equalTo: durationTitleLabel.bottomAnchor, constant: 18),
+            stepsTitleLabel.topAnchor.constraint(equalTo: durationTitleLabel.bottomAnchor, constant: 16),
             stepsTitleLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: pad),
             stepsTitleLabel.widthAnchor.constraint(equalToConstant: labelW),
             stepsSlider.centerYAnchor.constraint(equalTo: stepsTitleLabel.centerYAnchor),

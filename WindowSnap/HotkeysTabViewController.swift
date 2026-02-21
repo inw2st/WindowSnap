@@ -60,7 +60,7 @@ class HotkeysTabViewController: NSViewController {
         let labelWidth: CGFloat = 90
 
         NSLayoutConstraint.activate([
-            sectionLabel.topAnchor.constraint(equalTo: view.topAnchor, constant: pad),
+            sectionLabel.topAnchor.constraint(equalTo: view.topAnchor, constant: 58),
             sectionLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: pad),
 
             // 왼쪽 스냅 행
